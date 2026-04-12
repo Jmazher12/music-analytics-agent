@@ -1,0 +1,21 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Environment
+.env
+
+# Data (large files — rebuild from setup scripts)
+data/spotify_tracks.db
+data/chroma_db/
+data/spotify_tracks.csv
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

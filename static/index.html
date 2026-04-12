@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Analytics Agent</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #f4f1ec;
+            --bg-card: #ffffff;
+            --bg-input: #ffffff;
+            --border: #e2ddd5;
+            --border-focus: #8b7355;
+            --text-primary: #2c2825;
+            --text-secondary: #6b6560;
+            --text-muted: #9b9590;
+            --accent: #8b7355;
+            --accent-light: #b5a48c;
+            --accent-bg: #f0ebe3;
+            --green: #4a7c59;
+            --green-light: #e8f0ea;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 840px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 48px 0 36px;
+        }
+
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 14px 18px;
+            border-radius: var(--radius);
+            border: 1.5px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.25s, box-shadow 0.25s;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(139,115,85,0.1);
+        }
+
+        .search-box input::placeholder { color: var(--text-muted); }
+
+        .search-box button {
+            padding: 14px 28px;
+            border-radius: var(--radius);
+            border: none;
+            background: var(--accent);
+            color: #fff;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .search-box button:hover { background: #7a6548; transform: translateY(-1px); }
+        .search-box button:active { transform: translateY(0); }
+        .search-box button:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; transform: none; }
+
+        .examples { margin-bottom: 32px; }
+
+        .examples p {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 500;
+        }
+
+        .example-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        .example-chips button {
+            padding: 8px 16px;
+            border-radius: 24px;
+            border: 1.5px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .example-chips button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+
+        .loading { text-align: center; padding: 48px 20px; display: none; }
+
+        .loading .spinner {
+            width: 36px; height: 36px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 18px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading p { color: var(--text-muted); font-size: 0.9rem; }
+        .loading .subtext { font-size: 0.8rem; margin-top: 6px; opacity: 0.7; }
+
+        .results { display: none; }
+
+        .result-section {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 28px 32px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
+        }
+
+        .result-section h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--text-primary);
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-section h2 .icon {
+            width: 28px; height: 28px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .icon-data { background: var(--green-light); }
+        .icon-analysis { background: var(--accent-bg); }
+
+        .result-section .content { font-size: 0.93rem; color: var(--text-secondary); line-height: 1.8; }
+        .result-section .content h3 { font-size: 1.02rem; font-weight: 600; color: var(--text-primary); margin: 20px 0 8px; }
+        .result-section .content h4 { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin: 16px 0 6px; }
+        .result-section .content p { margin-bottom: 12px; }
+        .result-section .content strong { color: var(--text-primary); font-weight: 600; }
+        .result-section .content ul, .result-section .content ol { margin: 8px 0 16px 24px; }
+        .result-section .content li { margin-bottom: 6px; }
+        .result-section .content li::marker { color: var(--accent-light); }
+
+        .charts-container { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 16px; }
+        .charts-container img { max-width: 100%; border-radius: 10px; border: 1px solid var(--border); box-shadow: var(--shadow-md); }
+
+        .error {
+            background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius);
+            padding: 20px 24px; color: #b91c1c; font-size: 0.9rem; display: none;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 16px; }
+            header { padding: 32px 0 24px; }
+            header h1 { font-size: 1.7rem; }
+            .result-section { padding: 20px; }
+            .search-box { flex-direction: column; }
+            .search-box button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Music Analytics Agent</h1>
+            <p>AI-powered analysis of 89,000+ Spotify tracks across 125 genres</p>
+        </header>
+
+        <div class="search-box">
+            <input type="text" id="queryInput" placeholder="Ask a question about music data..."
+                   onkeypress="if(event.key==='Enter') submitQuery()">
+            <button id="submitBtn" onclick="submitQuery()">Analyze</button>
+        </div>
+
+        <div class="examples">
+            <p>Suggested questions</p>
+            <div class="example-chips">
+                <button onclick="setQuery('Which genres have the highest danceability and why?')">Genre danceability</button>
+                <button onclick="setQuery('What makes a song popular on Spotify?')">Song popularity</button>
+                <button onclick="setQuery('Compare the energy and valence of rock vs pop vs jazz')">Genre comparison</button>
+                <button onclick="setQuery('What are the most common tempos across different genres?')">Tempo analysis</button>
+                <button onclick="setQuery('Do explicit songs tend to be more popular?')">Explicit vs clean</button>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing your question...</p>
+            <p class="subtext">Collecting data, exploring patterns, and forming a hypothesis</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="results" id="results">
+            <div class="result-section">
+                <h2><span class="icon icon-data">📊</span> Data Collection &amp; Exploration</h2>
+                <div class="content" id="dataFindings"></div>
+            </div>
+            <div class="result-section">
+                <h2><span class="icon icon-analysis">💡</span> Analysis &amp; Hypothesis</h2>
+                <div class="content" id="analysis"></div>
+                <div class="charts-container" id="charts"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setQuery(text) {
+            document.getElementById('queryInput').value = text;
+            submitQuery();
+        }
+
+        function renderMarkdown(text) {
+            if (!text) return '';
+            let html = text;
+
+            // Escape HTML entities
+            html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // Headers
+            html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+            html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+            html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+            html = html.replace(/^# (.+)$/gm, '<h3>$1</h3>');
+
+            // Bold + italic
+            html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+            // Bold
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            // Italic
+            html = html.replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>');
+
+            // Bullet lists
+            html = html.replace(/^[\*\-] (.+)$/gm, '{{LI}}$1{{/LI}}');
+            html = html.replace(/({{LI}}[\s\S]*?{{\/LI}}(\n)?)+/g, function(match) {
+                const items = match.replace(/{{LI}}([\s\S]*?){{\/LI}}\n?/g, '<li>$1</li>');
+                return '<ul>' + items + '</ul>';
+            });
+
+            // Numbered lists
+            html = html.replace(/^\d+\. (.+)$/gm, '{{OLI}}$1{{/OLI}}');
+            html = html.replace(/({{OLI}}[\s\S]*?{{\/OLI}}(\n)?)+/g, function(match) {
+                const items = match.replace(/{{OLI}}([\s\S]*?){{\/OLI}}\n?/g, '<li>$1</li>');
+                return '<ol>' + items + '</ol>';
+            });
+
+            // Paragraphs
+            html = html.replace(/\n\n+/g, '</p><p>');
+            html = html.replace(/\n/g, '<br>');
+
+            html = '<p>' + html + '</p>';
+
+            // Clean up
+            html = html.replace(/<p>\s*<\/p>/g, '');
+            html = html.replace(/<p>\s*(<h[34]>)/g, '$1');
+            html = html.replace(/(<\/h[34]>)\s*<\/p>/g, '$1');
+            html = html.replace(/<p>\s*(<[uo]l>)/g, '$1');
+            html = html.replace(/(<\/[uo]l>)\s*<\/p>/g, '$1');
+            html = html.replace(/<p><br>/g, '<p>');
+            html = html.replace(/<br><\/p>/g, '</p>');
+
+            return html;
+        }
+
+        async function submitQuery() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) return;
+
+            const btn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            const error = document.getElementById('error');
+
+            btn.disabled = true;
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            error.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query }),
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Something went wrong');
+                }
+
+                document.getElementById('dataFindings').innerHTML =
+                    renderMarkdown(data.data_findings || 'No data findings available.');
+                document.getElementById('analysis').innerHTML =
+                    renderMarkdown(data.analysis || 'No analysis available.');
+
+                const chartsDiv = document.getElementById('charts');
+                chartsDiv.innerHTML = '';
+                if (data.charts && data.charts.length > 0) {
+                    data.charts.forEach(chart => {
+                        const img = document.createElement('img');
+                        img.src = 'data:image/png;base64,' + chart.image;
+                        img.alt = chart.title || 'Chart';
+                        chartsDiv.appendChild(img);
+                    });
+                }
+
+                results.style.display = 'block';
+            } catch (err) {
+                error.textContent = err.message;
+                error.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

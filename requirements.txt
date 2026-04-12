@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+openai-agents[litellm]
+litellm
+chromadb
+pandas
+matplotlib
+python-dotenv
+
