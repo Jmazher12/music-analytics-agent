@@ -2,7 +2,7 @@
  
 A multi-agent system that performs data collection, exploratory data analysis, and hypothesis formation on a dataset of 89,000+ Spotify tracks across 125 genres.
  
-**Deployed URL:** _[Add Cloud Run URL after deployment]_
+**Deployed URL:** https://music-agent-599815086507.us-central1.run.app
  
 ---
  
