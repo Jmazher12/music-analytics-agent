@@ -200,6 +200,115 @@
             padding: 20px 24px; color: #b91c1c; font-size: 0.9rem; display: none;
         }
 
+                .track-search {
+            margin-bottom: 32px;
+        }
+
+        .track-search > p {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 500;
+        }
+
+        .track-list {
+            margin-top: 12px;
+        }
+
+        .track-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .track-item:hover {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-md);
+        }
+
+        .track-item .track-info h4 {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .track-item .track-info span {
+            font-size: 0.83rem;
+            color: var(--text-muted);
+        }
+
+        .track-item .popularity-badge {
+            background: var(--accent-bg);
+            color: var(--accent);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .track-detail-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-top: 16px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .track-detail-card h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+
+        .track-detail-card .artist {
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .spotify-embed {
+            margin: 16px 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .feature-card {
+            background: var(--bg-primary);
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .feature-card .value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .feature-card .label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-top: 4px;
+        }
+
         @media (max-width: 600px) {
             .container { padding: 16px; }
             header { padding: 32px 0 24px; }
@@ -233,6 +342,17 @@
                 <button onclick="setQuery('Do explicit songs tend to be more popular?')">Explicit vs clean</button>
             </div>
         </div>
+
+        <div class="track-search">
+    <p>Or search for a specific track</p>
+    <div class="search-box">
+        <input type="text" id="trackSearchInput" placeholder="Search by song name or artist..."
+               onkeypress="if(event.key==='Enter') searchTracks()">
+        <button onclick="searchTracks()">Search</button>
+    </div>
+    <div id="trackResults"></div>
+    <div id="trackDetail" style="display:none;"></div>
+</div>
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
@@ -365,6 +485,96 @@
                 loading.style.display = 'none';
             }
         }
+
+        const KEY_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+
+async function searchTracks() {
+    const query = document.getElementById('trackSearchInput').value.trim();
+    if (!query) return;
+
+    const res = await fetch('/api/search?q=' + encodeURIComponent(query));
+    const tracks = await res.json();
+    const container = document.getElementById('trackResults');
+
+    if (!tracks.length) {
+        container.innerHTML = '<p style="color:var(--text-muted);padding:12px;">No tracks found.</p>';
+        return;
+    }
+
+    container.innerHTML = '<div class="track-list">' + tracks.map(t => `
+        <div class="track-item" onclick="showTrackDetail('${t.track_id}')">
+            <div class="track-info">
+                <h4>${t.track_name}</h4>
+                <span>${t.artists} · ${t.track_genre}</span>
+            </div>
+            <span class="popularity-badge">${t.popularity}</span>
+        </div>
+    `).join('') + '</div>';
+
+    document.getElementById('trackDetail').style.display = 'none';
+}
+
+async function showTrackDetail(trackId) {
+    const res = await fetch('/api/track/' + trackId);
+    const t = await res.json();
+    const container = document.getElementById('trackDetail');
+
+    const keyName = t.key >= 0 ? KEY_NAMES[t.key] + (t.mode === 1 ? ' Major' : ' Minor') : 'Unknown';
+    const minutes = Math.floor(t.duration_ms / 60000);
+    const seconds = Math.floor((t.duration_ms % 60000) / 1000);
+
+    container.innerHTML = `
+        <div class="track-detail-card">
+            <h3>${t.track_name}</h3>
+            <div class="artist">${t.artists} · ${t.album_name}</div>
+
+            <div class="spotify-embed">
+                <iframe
+                    src="https://open.spotify.com/embed/track/${t.track_id}?theme=0"
+                    width="100%" height="80" frameborder="0"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy">
+                </iframe>
+            </div>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="value">${t.tempo.toFixed(0)}</div>
+                    <div class="label">BPM</div>
+                </div>
+                <div class="feature-card">
+                    <div class="value">${keyName}</div>
+                    <div class="label">Key</div>
+                </div>
+                <div class="feature-card">
+                    <div class="value">${t.popularity}</div>
+                    <div class="label">Popularity</div>
+                </div>
+                <div class="feature-card">
+                    <div class="value">${(t.energy * 100).toFixed(0)}%</div>
+                    <div class="label">Energy</div>
+                </div>
+                <div class="feature-card">
+                    <div class="value">${(t.danceability * 100).toFixed(0)}%</div>
+                    <div class="label">Danceability</div>
+                </div>
+                <div class="feature-card">
+                    <div class="value">${(t.valence * 100).toFixed(0)}%</div>
+                    <div class="label">Valence</div>
+                </div>
+                <div class="feature-card">
+                    <div class="value">${minutes}:${seconds.toString().padStart(2, '0')}</div>
+                    <div class="label">Duration</div>
+                </div>
+                <div class="feature-card">
+                    <div class="value">${t.loudness.toFixed(1)} dB</div>
+                    <div class="label">Loudness</div>
+                </div>
+            </div>
+        </div>
+    `;
+    container.style.display = 'block';
+}
     </script>
 </body>
 </html>
